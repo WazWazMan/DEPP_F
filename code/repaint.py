@@ -41,11 +41,19 @@ class RePaint:
         latents = torch.randn_like(init_latents)
 
         # repaint stuff
-        repaints = 0
-        last_t = self.scheduler.timesteps[-1]
+        times = self.scheduler.timesteps[-1]
+        time = len(self.scheduler.timesteps[-1])
+        r_count = repaint_count
+        j_count = jump_length
+        rs = 0 
+
+        curr_t = 0
+        last_t = j_count
 
         with torch.no_grad():
-            for t in self.scheduler.timesteps:
+            while curr_t < time:
+                t = times[curr_t]
+            # for t in self.scheduler.timesteps:
                 # Step (a): Clamp known region at current noise level
                 # Sample random noise epsilon ~ N(0, I)
                 noise = torch.randn_like(init_latents)
@@ -68,13 +76,24 @@ class RePaint:
                 latents = self.scheduler.step(
                     noise_pred, t, latents).prev_sample
                 
-                repaints+= 1
-                if repaints == repaint_count:
-                    repaints=0
-                    last_t = t
-                elif last_t - jump_length >= t:
-                    t= min(t + jump_length,last_t)
-                    latents = self.scheduler.add_noise(latents, noise, t)
+                curr_t += 1
+                print(curr_t, last_t, time)
+                if (curr_t == last_t):
+                    print()
+
+                    rs += 1
+                    if rs == r_count:
+                        last_t += j_count
+                        if(last_t > time):
+                            j_count = time -j_count
+                            last_t = time
+                        rs = 0
+                    else:
+                        curr_t -= j_count
+                        beta_t = self.scheduler.betas[times[curr_t]]
+                        noise = torch.randn_like(latents)
+                        latents = torch.sqrt(1 - beta_t) * latents + torch.sqrt(beta_t) * noise
+
 
 
         # Finalize: Guarantee exact agreement on known pixels (decoded)
