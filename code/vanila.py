@@ -29,6 +29,8 @@ class VanilaImpainting:
         # mask is either 255 of 0 due to it bing black and white mask
         mask_tensor = torch.from_numpy(np.array(mask_resized)).float() / 255.0
         mask_tensor = mask_tensor.unsqueeze(0).unsqueeze(0).to(self.device, dtype=torch.float16)
+        blurred_mask = TF.gaussian_blur(mask_tensor, kernel_size=5, sigma=(0.1, 2.0))
+        mask_tensor = blurred_mask * mask_tensor
 
         # Generate text embeddings for the UNet condition
         text_inputs = self.pipe.tokenizer(prompt, return_tensors="pt", padding="max_length", truncation=True, max_length=self.pipe.tokenizer.model_max_length)
