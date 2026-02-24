@@ -53,6 +53,9 @@ class RePaint:
         print("starting", flush=True)
         with torch.no_grad():
             while curr_t < time:
+                print(" ", flush=True)
+                print("stating iteration", flush=True)
+
                 t = times[curr_t]
             # for t in self.scheduler.timesteps:
                 # Step (a): Clamp known region at current noise level
@@ -78,6 +81,7 @@ class RePaint:
                     noise_pred, t, latents).prev_sample
                 
                 curr_t += 1
+                print("ending iteration", flush=True)
                 print(curr_t, last_t, time, flush=True)
                 if (curr_t == last_t):
                     print("", flush=True)
