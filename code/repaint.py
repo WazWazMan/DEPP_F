@@ -50,6 +50,7 @@ class RePaint:
         curr_t = 0
         last_t = j_count
 
+        print("starting", flush=True)
         with torch.no_grad():
             while curr_t < time:
                 t = times[curr_t]
@@ -77,9 +78,9 @@ class RePaint:
                     noise_pred, t, latents).prev_sample
                 
                 curr_t += 1
-                print(curr_t, last_t, time)
+                print(curr_t, last_t, time, flush=True)
                 if (curr_t == last_t):
-                    print()
+                    print("", flush=True)
 
                     rs += 1
                     if rs == r_count:
