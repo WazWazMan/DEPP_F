@@ -41,8 +41,8 @@ class RePaint:
         latents = torch.randn_like(init_latents)
 
         # repaint stuff
-        times = self.scheduler.timesteps[-1]
-        time = len(self.scheduler.timesteps[-1])
+        times = self.scheduler.timesteps
+        time = len(self.scheduler.timesteps)
         r_count = repaint_count
         j_count = jump_length
         rs = 0 
