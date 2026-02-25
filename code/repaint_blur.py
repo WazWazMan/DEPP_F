@@ -6,6 +6,10 @@ from typing import List
 from tqdm import tqdm
 import PIL.Image
 
+import torch.nn as nn
+import torchvision.transforms as T
+import matplotlib.pyplot as plt
+
 class RePaint:
     TARGET_SIZE = (512, 512)
     def __init__(self, pipe):
@@ -53,7 +57,7 @@ class RePaint:
     
         mask_tensor = torch.from_numpy(np.array(mask_resized)).float() / 255.0
         mask_tensor = mask_tensor.unsqueeze(0).unsqueeze(0).to(self.device, dtype=torch.float16)
-
+        
         return mask_tensor
 
     @torch.no_grad()
@@ -96,13 +100,41 @@ class RePaint:
         return torch.sqrt(partial_alpha_cumprod) * x_t + \
                 torch.sqrt(1.0 - partial_alpha_cumprod) * torch.randn_like(x_t)
 
+    def print_mask(self, mask_tensor: torch.Tensor, title: str = "Mask Visualization"):
+        """
+        Converts a torch mask tensor [B, C, H, W] to an image and displays it.
+        """
+        # 1. Move to CPU and convert to float32 for compatibility
+        mask = mask_tensor.detach().cpu().float()
+        
+        # 2. Remove Batch and Channel dimensions [1, 1, H, W] -> [H, W]
+        if mask.ndim == 4:
+            mask = mask.squeeze(0).squeeze(0)
+        elif mask.ndim == 3:
+            mask = mask.squeeze(0)
+    
+        # 3. Plotting
+        plt.figure(figsize=(6, 6))
+        plt.imshow(mask, cmap='gray', vmin=0.0, vmax=1.0)
+        plt.title(title)
+        plt.axis('off') # Hide pixel coordinates
+        plt.show()
+
     def impaint(self, image: Image.Image, mask: Image.Image, prompt="", j:int=10, r:int = 5, timestamps=-1,jumps_every=50 ):
         jumps = self.__get_jumps(jumps_every=jumps_every,r=r)
         original_tensor = self.__image_to_tensor(image)
         mask_tensor = self.__mask_to_tensor(mask,original_tensor.shape)
+        og_mask = mask_tensor
         text_embeddings= self.__embed_test(prompt)
-
         sample = torch.randn_like(original_tensor).to(self.device)
+
+        blur_layer = T.GaussianBlur(kernel_size=25, sigma=(0.1, 2.0))
+
+        # Use it in your code
+        blurred_mask = blur_layer(mask_tensor)
+        mask_tensor = blurred_mask * mask_tensor
+        # self.print_mask(mask_tensor)
+        # self.print_mask(os_mask)
         
         print("beginning impainting")
         for t in tqdm(self.scheduler.timesteps):
@@ -116,6 +148,6 @@ class RePaint:
 
             x_known = self.__zero_to_t(original_tensor, t)
             x_unknown = self.__single_reverse_step(sample, t, text_embeddings)
-            sample = mask_tensor * x_known + (1-mask_tensor) * x_unknown
+            sample = og_mask * x_known + (1-og_mask) * x_unknown
 
         return self.__tensor_to_image(sample)
