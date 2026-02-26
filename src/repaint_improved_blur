@@ -1,0 +1,53 @@
+from repaint_improve_jumps import RePaintImproved
+from PIL import Image
+import torch
+from PIL import ImageFilter
+import PIL.Image
+from tqdm import tqdm
+
+class RePaintImprovedBlurAdditional(RePaintImproved):
+    def __init__(self, pipe):
+        super().__init__(pipe)
+
+    @torch.no_grad()
+    def __mask_to_tensor(self, image: Image.Image,image_shape) -> torch.Tensor:
+        image = image.convert("L")
+        latent_h, latent_w = image_shape[2], image_shape[3]
+        image = image.filter(ImageFilter.GaussianBlur(radius=2)) #added 1
+        mask_resized = image.resize((latent_w, latent_h), resample=PIL.Image.BILINEAR) #added 2
+        #mask_resized = image.resize((latent_w, latent_h), PIL.Image.NEAREST)
+    
+        mask_tensor = torch.from_numpy(np.array(mask_resized)).float() / 255.0
+        mask_tensor = mask_tensor.unsqueeze(0).unsqueeze(0).to(self.device, dtype=torch.float16)
+        
+        return mask_tensor
+    
+    def impaint(self, image: Image.Image, mask: Image.Image, prompt="",
+     j:int=10, r:int = 5, timestamps=-1,jumps_every=50 ):
+        jumps = self.__get_jumps(jumps_every=jumps_every,r=r)
+        original_tensor = self.__image_to_tensor(image)
+        mask_tensor = self.__mask_to_tensor(mask,original_tensor.shape)
+        og_mask = mask_tensor
+        text_embeddings= self.__embed_test(prompt)
+
+        sample = torch.randn_like(original_tensor).to(self.device)
+        
+        print("beginning impainting")
+        for t in tqdm(self.scheduler.timesteps):
+            while len(jumps) > 0 and jumps[0] == t:
+                jumps = jumps[1:]
+                sample = self.__forward_j_steps(sample, t, j)
+
+                for override_t in range(t + j, t, -1):
+                    x_known_inner = self.__zero_to_t(original_tensor, override_t)
+                    x_unknown_inner = self.__single_reverse_step(sample, override_t, text_embeddings)
+                    sample = mask_tensor * x_known_inner + (1 - mask_tensor) * x_unknown_inner
+
+
+            x_known = self.__zero_to_t(original_tensor, t)
+            x_unknown = self.__single_reverse_step(sample, t, text_embeddings)
+            sample = mask_tensor * x_known + (1-mask_tensor) * x_unknown
+        
+        sample = og_mask * x_known + (1-og_mask) * x_unknown
+
+        return self.__tensor_to_image(sample)
