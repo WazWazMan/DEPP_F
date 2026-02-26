@@ -1,1 +1,5 @@
-.pyc
+*.py[codz]
+__pycache__/
+*$py.class
+
+.ipynb_checkpoints
