@@ -1,7 +1,10 @@
+from PIL import Image
 import torch
-from .repaint_improve_jumps import RePaintImproved
+from tqdm import tqdm
+from .repaint_improved_blur import RePaintImprovedBlur
+import numpy as np
 
-class RePaintImprovedAverage(RePaintImproved):
+class RePaintImprovedBlueAverage(RePaintImprovedBlur):
     def __init__(self, pipe,avg_count=3):
         super().__init__(pipe)
         self.avg_count = avg_count
@@ -24,4 +27,3 @@ class RePaintImprovedAverage(RePaintImproved):
             noise = torch.randn_like(
                 x) * torch.sqrt(self.posterior_variance[t])
             return mean + noise
-
