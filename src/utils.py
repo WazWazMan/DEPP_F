@@ -1,7 +1,7 @@
 from PIL import Image, ImageOps
 import torch
 import matplotlib.pyplot as plt
-
+from pathlib import Path
 
 def mask_image(image: Image.Image, mask: Image.Image):
     border_size = 5
@@ -26,6 +26,13 @@ def open_mask(path, target_size = (512, 512)) -> Image.Image:
     image = image.convert("L")
     image = image.resize(target_size)
     return image
+
+def save_image(img: Image.Image, folder: str, name: str):
+    folder_path = Path(folder)
+    folder_path.mkdir(parents=True, exist_ok=True)
+    full_path = (folder_path / name).with_suffix('.png')
+
+    img.save(full_path)
 
 def print_mask(self, mask_tensor: torch.Tensor, title: str = "Mask Visualization"):
     mask = mask_tensor.detach().cpu().float()
