@@ -19,11 +19,16 @@ dependencies:
   - scipy
   - matplotlib
   - tqdm
-  - pytorch=1.10.1
+  - pytorch=1.10.1  
   - mkl<2022        # prevents crash when importing torch on M1 mac via rosetta2
   - torchvision=0.11.2
   - cudatoolkit=11.3
   - torchtext
+  - diffusers 
+  - transformers 
+  - accelerate 
+  - safetensors
+  - lpips
 
   - pip:
       - nbmerge
