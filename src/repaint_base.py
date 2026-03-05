@@ -106,6 +106,7 @@ class RePaintBase:
         sample = torch.randn_like(original_tensor).to(self.device)
         
         print("beginning impainting")
+        original_tensor.shape
         for t in tqdm(self.scheduler.timesteps):
             while len(jumps) > 0 and jumps[0] == t:
                 jumps = jumps[1:]
