@@ -82,6 +82,7 @@ class RePaintBase:
             return torch.sqrt(self.alphas_cumprod[t]) * x_0 + \
                     torch.sqrt(1.0 - self.alphas_cumprod[t]) * torch.randn_like(x_0)
 
+    @torch.no_grad()
     def _tensor_to_image(self, tensor):
         final_latents = 1 / self.pipe.vae.config.scaling_factor * tensor
         torch.cuda.empty_cache()
