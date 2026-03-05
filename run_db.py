@@ -6,7 +6,7 @@ from pathlib import Path
 repaint = repaint.RePaint()
 dataset = load_from_disk("coco_200_masks")
 
-start_index = 1
+start_index = 0
 for i in range(start_index, len(dataset)):
 # for i, example in enumerate(dataset):
     print(f"Running example {i + 1}/200...")
