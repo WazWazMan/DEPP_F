@@ -10,4 +10,4 @@ echo "*** Activating environment $CONDA_ENV ***"
 source $CONDA_HOME/etc/profile.d/conda.sh
 conda activate $CONDA_ENV
 
-python ./run_db.py --start 50 --count 50
+python ./run_db.py --start 80 --count 40
