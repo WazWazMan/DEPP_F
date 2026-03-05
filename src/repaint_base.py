@@ -85,7 +85,6 @@ class RePaintBase:
     @torch.no_grad()
     def _tensor_to_image(self, tensor):
         final_latents = 1 / self.pipe.vae.config.scaling_factor * tensor
-        torch.cuda.empty_cache()
         image = self.pipe.vae.decode(final_latents).sample
             
         # Convert tensor to PIL Image
