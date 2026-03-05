@@ -18,9 +18,7 @@ class RePaintImprovedBlur(RePaintImproved):
         og_mask = mask_tensor
 
         text_embeddings= self._embed_test(prompt)
-        mask_tensor = TF.to_tensor(image.convert("L")).unsqueeze(0).to(self.device, dtype=torch.float16)
-        soft_mask = F.interpolate(mask_tensor, size=(original_tensor.shape[2], original_tensor.shape[3]), mode='bilinear', align_corners=False)
-
+        soft_mask = TF.gaussian_blur(mask_tensor, kernel_size=[5, 5], sigma=[2.0, 2.0])
         mask_tensor = og_mask * soft_mask
 
         sample = torch.randn_like(original_tensor).to(self.device)

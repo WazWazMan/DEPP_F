@@ -7,7 +7,8 @@ repaint = repaint.RePaint()
 dataset = load_from_disk("coco_200_masks")
 
 start_index = 0
-for i in range(start_index, len(dataset)):
+for i in range(1):
+# for i in range(start_index, len(dataset)):
 # for i, example in enumerate(dataset):
     print(f"Running example {i + 1}/200...")
     
@@ -24,7 +25,8 @@ for i in range(start_index, len(dataset)):
         #         "improved repaint"
         #     )
         # )
-    result = repaint.run_all(
+    repaint.set_seed(42)
+    result = repaint.run_repaint_improved_blur(
         img=current_image,
         mask=current_mask,
         prompt=current_prompt,
