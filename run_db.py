@@ -4,9 +4,9 @@ from src import repaint,utils
 from pathlib import Path
 import argparse
 
-parser = argparse.ArgumentParser(description="Run the RePaint model on a dataset.")
-parser.add_argument("--start", type=int, default=0, help="The starting index for the dataset.")
-parser.add_argument("--count", type=int, default=1, help="The number of images to process.")
+parser = argparse.ArgumentParser(description="Run the model on a dataset.")
+parser.add_argument("--start", type=int, default=0, help="Starting index for the dataset.")
+parser.add_argument("--count", type=int, default=1, help="Number of images to process.")
 args = parser.parse_args()
 
 repaint = repaint.RePaint()
@@ -29,7 +29,7 @@ for i in range(start_index, end_index):
         mask=current_mask,
         prompt=current_prompt,
         j=10,
-        r=20,
+        r=10,
         seed=42
     )
     folderPath = f"./result_db/{i}"
