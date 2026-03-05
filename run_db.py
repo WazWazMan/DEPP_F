@@ -29,7 +29,7 @@ for i in range(start_index, len(dataset)):
         mask=current_mask,
         prompt=current_prompt,
         j=10,
-        r=10
+        r=20
     )
     folderPath = f"./result_db/{i}"
     for res in result:
