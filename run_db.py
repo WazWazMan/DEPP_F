@@ -16,10 +16,20 @@ for i in range(start_index, len(dataset)):
     current_mask = example["mask"]
     current_prompt = example["description"]
     
+    # print("running improved repaint")
+        # self.set_seed(seed)
+        # images.append(
+        #     Result(
+        #         self.run_repaint_improved(img,mask,prompt,j,r),
+        #         "improved repaint"
+        #     )
+        # )
     result = repaint.run_all(
         img=current_image,
         mask=current_mask,
-        prompt=current_prompt
+        prompt=current_prompt,
+        j=10,
+        r=10
     )
     folderPath = f"./result_db/{i}"
     for res in result:
