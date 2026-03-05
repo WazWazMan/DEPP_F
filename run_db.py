@@ -2,13 +2,20 @@ from datasets import load_from_disk
 from PIL import Image
 from src import repaint,utils
 from pathlib import Path
+import argparse
+
+parser = argparse.ArgumentParser(description="Run the RePaint model on a dataset.")
+parser.add_argument("--start", type=int, default=0, help="The starting index for the dataset.")
+parser.add_argument("--count", type=int, default=1, help="The number of images to process.")
+args = parser.parse_args()
 
 repaint = repaint.RePaint()
 dataset = load_from_disk("coco_200_masks")
 
-start_index = 0
-for i in range(1):
-# for i in range(start_index, len(dataset)):
+start_index = args.start
+end_index = start_index + args.count
+
+for i in range(start_index, end_index):
 # for i, example in enumerate(dataset):
     print(f"Running example {i + 1}/200...")
     
@@ -16,25 +23,15 @@ for i in range(1):
     current_image = example["image"]
     current_mask = example["mask"]
     current_prompt = example["description"]
-    
-    # print("running improved repaint")
-        # self.set_seed(seed)
-        # images.append(
-        #     Result(
-        #         self.run_repaint_improved(img,mask,prompt,j,r),
-        #         "improved repaint"
-        #     )
-        # )
-    repaint.set_seed(42)
-    result = repaint.run_repaint_improved_blur(
+
+    result = repaint.run_all(
         img=current_image,
         mask=current_mask,
         prompt=current_prompt,
         j=10,
-        r=10
+        r=20,
+        seed=42
     )
     folderPath = f"./result_db/{i}"
-    utils.save_image(result,folderPath,"res.text")
-
     for res in result:
         utils.save_image(res.image,folderPath,res.text)
