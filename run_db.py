@@ -31,7 +31,7 @@ for i in range(1):
         mask=current_mask,
         prompt=current_prompt,
         j=10,
-        r=20
+        r=10
     )
     folderPath = f"./result_db/{i}"
     utils.save_image(result,folderPath,"res.text")
