@@ -1,26 +1,14 @@
 from .repaint_improve_jumps import RePaintImproved
 from PIL import Image
 import torch
-from PIL import ImageFilter
-import PIL.Image
 from tqdm import tqdm
 import numpy as np
+import torch.nn.functional as F
+import torchvision.transforms.functional as TF
 
 class RePaintImprovedBlur(RePaintImproved):
     def __init__(self, pipe):
         super().__init__(pipe)
-
-    @torch.no_grad()
-    def _mask_to_tensor(self, image: Image.Image,image_shape) -> torch.Tensor:
-        image = image.convert("L")
-        latent_h, latent_w = image_shape[2], image_shape[3]
-        image = image.filter(ImageFilter.GaussianBlur(radius=2)) #added 1
-        mask_resized = image.resize((latent_w, latent_h), resample=PIL.Image.BILINEAR) #added 2
-    
-        mask_tensor = torch.from_numpy(np.array(mask_resized)).float() / 255.0
-        mask_tensor = mask_tensor.unsqueeze(0).unsqueeze(0).to(self.device, dtype=torch.float16)
-        
-        return mask_tensor
     
     def impaint(self, image: Image.Image, mask: Image.Image, prompt="",
      j:int=10, r:int = 5, timestamps=-1,jumps_every=50 ):
@@ -28,7 +16,12 @@ class RePaintImprovedBlur(RePaintImproved):
         original_tensor = self._image_to_tensor(image)
         mask_tensor = self._mask_to_tensor(mask,original_tensor.shape)
         og_mask = mask_tensor
+
         text_embeddings= self._embed_test(prompt)
+        mask_tensor = TF.to_tensor(image.convert("L")).unsqueeze(0).to(self.device, dtype=torch.float16)
+        soft_mask = F.interpolate(mask_tensor, size=(original_tensor.shape[2], original_tensor.shape[3]), mode='bilinear', align_corners=False)
+
+        mask_tensor = og_mask * soft_mask
 
         sample = torch.randn_like(original_tensor).to(self.device)
         
