@@ -84,6 +84,7 @@ class RePaintBase:
 
     def _tensor_to_image(self, tensor):
         final_latents = 1 / self.pipe.vae.config.scaling_factor * tensor
+        torch.cuda.empty_cache()
         image = self.pipe.vae.decode(final_latents).sample
             
         # Convert tensor to PIL Image
@@ -106,7 +107,6 @@ class RePaintBase:
         sample = torch.randn_like(original_tensor).to(self.device)
         
         print("beginning impainting")
-        print(original_tensor.shape)
         for t in tqdm(self.scheduler.timesteps):
             while len(jumps) > 0 and jumps[0] == t:
                 jumps = jumps[1:]
