@@ -22,6 +22,7 @@ class RePaint:
                 model_id,
                 torch_dtype=torch.float16
             ).to(device)
+
         
         self.pipe.scheduler = DDPMScheduler.from_config(self.pipe.scheduler.config)
 
@@ -44,14 +45,14 @@ class RePaint:
             )
         )
 
-        print("running basic repaint")
-        self.set_seed(seed)
-        images.append(
-            Result(
-                self.run_repaint_base(img,mask,prompt,j,r),
-                "base repaint"
-            )
-        )
+        # print("running basic repaint")
+        # self.set_seed(seed)
+        # images.append(
+        #     Result(
+        #         self.run_repaint_base(img,mask,prompt,j,r),
+        #         "base repaint"
+        #     )
+        # )
 
         print("running improved repaint")
         self.set_seed(seed)
