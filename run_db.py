@@ -34,5 +34,7 @@ for i in range(1):
         r=20
     )
     folderPath = f"./result_db/{i}"
+    utils.save_image(result.image,folderPath,"res.text")
+
     for res in result:
         utils.save_image(res.image,folderPath,res.text)
