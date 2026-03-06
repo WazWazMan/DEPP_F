@@ -85,7 +85,7 @@ class RePaint:
         self.set_seed(seed)
         images.append(
             Result(
-                self.run_repaint_improved_average(img,mask,prompt,j,r,avg_count),
+                self.run_repaint_improved_blur_average(img,mask,prompt,j,r,avg_count),
                 "improved repaint with and blur average on noise sampling"
             )
         )
