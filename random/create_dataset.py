@@ -1,36 +1,77 @@
-from datasets import load_dataset
-from datasets import Dataset
+# need to download annotation from:
+# http://images.cocodataset.org/annotations/annotations_trainval2017.zip
+# and extract into root folder before running
 
-# 1. Load both datasets in streaming mode (test split only)
-pipe_stream = load_dataset('paint-by-inpaint/PIPE', split='test', streaming=True)
-mask_stream = load_dataset('paint-by-inpaint/PIPE_Masks', split='test', streaming=True)
+import os
+import requests
+import numpy as np
+from PIL import Image
+from io import BytesIO
+from pycocotools.coco import COCO
+from datasets import Dataset, Features, Image as HFImage, Value
 
-paired_data = []
+# 1. Initialize COCO API for instance annotations and captions
+# Update these paths to where you extracted the annotations folder
+dataDir = '.'
+dataType = 'val2017'
+instances_annFile = f'{dataDir}/annotations/instances_{dataType}.json'
+captions_annFile = f'{dataDir}/annotations/captions_{dataType}.json'
 
-# 2. Zip them together and verify the connection on-the-fly
-for img_data, mask_data in zip(pipe_stream.take(300), mask_stream.take(300)):
-    
-    # 3. THE VERIFICATION STEP: 
-    # If these IDs don't match, Python will immediately throw an error and stop.
-    assert img_data['img_id'] == mask_data['img_id'], f"Mismatch on img_id!"
-    assert img_data['ann_id'] == mask_data['ann_id'], f"Mismatch on ann_id!"
-    
-    # 4. If they match, safely combine them into your final list
-    paired_data.append({
-        "source_img": img_data["source_img"],
-        "target_img": img_data["target_img"],
-        "mask": mask_data["mask"],
-        # Grabbing one of the instructions as an example
-        "instruction": img_data["Instruction_Class"], 
-        "img_id": img_data["img_id"],
-        "ann_id": img_data["ann_id"]
-    })
+print("Loading annotations...")
+coco_instances = COCO(instances_annFile)
+coco_captions = COCO(captions_annFile)
 
-print(f"Successfully loaded and verified {len(paired_data)} connected pairs.")
+# 2. Get 200 image IDs that have both annotations and captions
+img_ids = coco_instances.getImgIds()
+selected_img_ids = img_ids[:200]
 
-my_local_dataset = Dataset.from_list(paired_data)
+def generate_dataset():
+    for img_id in selected_img_ids:
+        # Get image metadata
+        img_info = coco_instances.loadImgs(img_id)[0]
+        
+        # Fetch the actual image from the COCO URL
+        response = requests.get(img_info['coco_url'])
+        image = Image.open(BytesIO(response.content)).convert("RGB")
+        
+        # Get captions and pick the first one
+        ann_ids_caps = coco_captions.getAnnIds(imgIds=img_id)
+        anns_caps = coco_captions.loadAnns(ann_ids_caps)
+        description = anns_caps[0]['caption'] if anns_caps else "No description available."
+        
+        # Get instance annotations to build the mask
+        ann_ids_inst = coco_instances.getAnnIds(imgIds=img_id)
+        anns_inst = coco_instances.loadAnns(ann_ids_inst)
+        
+        # Create a blank mask
+        mask_array = np.zeros((img_info['height'], img_info['width']), dtype=np.uint8)
+        
+        # Merge all instance masks into one binary mask
+        for ann in anns_inst:
+            # pycocotools generates a binary mask for each annotation
+            mask_array = np.maximum(mask_array, coco_instances.annToMask(ann))
+        
+        # Convert the mask array (0s and 1s) to a standard PIL image (0 and 255)
+        mask_image = Image.fromarray((mask_array * 255).astype(np.uint8), mode="L")
+        
+        yield {
+            "image": image,
+            "mask": mask_image,
+            "description": description
+        }
 
-# 2. Save the entire dataset to a folder on your computer
-my_local_dataset.save_to_disk("saved_pipe_300")
+# 3. Define the Hugging Face Dataset features
+features = Features({
+    "image": HFImage(),
+    "mask": HFImage(),
+    "description": Value("string")
+})
 
-print("Dataset saved successfully!")
+# 4. Create the Hugging Face Dataset from the generator
+print("Building Hugging Face Dataset...")
+hf_dataset = Dataset.from_generator(generate_dataset, features=features)
+
+print(f"Successfully created dataset with {len(hf_dataset)} items!")
+print(hf_dataset[0]) 
+
+hf_dataset.save_to_disk("coco_200_masks")
