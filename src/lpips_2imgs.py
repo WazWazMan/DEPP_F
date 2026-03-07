@@ -1,13 +1,21 @@
 import lpips
+import cv2
+import numpy as np
 
-def lpips_2imgs(path0:str,path1:str, use_gpu = True,version = 0.1):
-    loss_fn = lpips.LPIPS(net='alex',version=version)
+def lpips_2imgs(image:str,path1:str, use_gpu = True,version = 0.1,loss_fn = None):
+    if not loss_fn:
+        loss_fn = lpips.LPIPS(net='alex',version=version)
 
     if(use_gpu):
         loss_fn.cuda()
 
     # Load images
-    img0 = lpips.im2tensor(lpips.load_image(path0)) # RGB image from [-1,1]
+    # image0 = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)[:,:,::-1]
+    # image0 = cv2.resize(image0, (512,512))
+
+    # we do this because we used it in the impainting proccess
+    image0 = np.array(image.convert('RGB').resize((512, 512)))
+    img0 = lpips.im2tensor(image0) # RGB image from [-1,1]
     img1 = lpips.im2tensor(lpips.load_image(path1))
 
     if(use_gpu):
