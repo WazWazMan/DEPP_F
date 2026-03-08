@@ -30,8 +30,7 @@ for i in range(start_index, end_index):
         mask=current_mask,
         prompt=current_prompt,
         j=10,
-        r=10,
-        seed=42
+        r=10
     )
     text = "improved repaint with and blur average on noise sampling"
     folderPath = f"./result_db/{i}"
