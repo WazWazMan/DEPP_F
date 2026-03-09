@@ -18,7 +18,7 @@ def compare_dataset_clip(dataset, models, device="cuda" if torch.cuda.is_availab
     model = CLIPModel.from_pretrained(model_id).to(device)
     
     for i, example in tqdm(enumerate(dataset)):
-        prompt = example["prompt"] 
+        prompt = example["description"] 
 
         count += 1
         for model_name in models:
