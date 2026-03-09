@@ -30,7 +30,7 @@ def compare_dataset_clip(dataset, models, device="cuda" if torch.cuda.is_availab
 
             with torch.no_grad():
                 outputs = model(**inputs)
-                clip_score = outputs.logits_per_image.item() 
+                clip_score = outputs.logits_per_image
             if model not in scores:
                 scores[model_name] = 0.0
             scores[model_name] += clip_score
