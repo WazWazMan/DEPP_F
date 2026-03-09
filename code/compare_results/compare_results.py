@@ -11,33 +11,7 @@ from tqdm import tqdm
 from torchmetrics.image.fid import FrechetInceptionDistance
 import torchvision.transforms as transforms
 from torchmetrics.image.kid import KernelInceptionDistance
-
-def compare_dataset_kid(dataset, models, device):
-    kid_scores = {}
-    
-    preprocess = transforms.Compose([
-        transforms.Resize((512, 512)),
-        transforms.ToTensor(),
-        transforms.Lambda(lambda x: (x * 255).byte())
-    ])
-
-    for model_name in models:
-        kid = KernelInceptionDistance(subset_size=50).to(device)
-        
-        for i, example in enumerate(dataset):
-            real_img = preprocess(example["image"].convert("RGB")).unsqueeze(0).to(device)
-            
-            gen_img_path = f"./result_db/{i}/{model_name}.png"
-            gen_img = Image.open(gen_img_path).convert("RGB")
-            gen_img_t = preprocess(gen_img).unsqueeze(0).to(device)
-
-            kid.update(real_img, real=True)
-            kid.update(gen_img_t, real=False)
-
-        mean_kid, std_kid = kid.compute()
-        kid_scores[model_name] = mean_kid
-        
-    return kid_scores
+from .kid import compare_dataset_kid
 
 def compare_dataset_clip(dataset, models, device):
     scores = {}
@@ -89,9 +63,6 @@ def compare_dataset_ssim(dataset,models):
         scores[model] /= count
 
     return scores
-
-    for model in models:
-        print(model,scores[model])
 
 def compare_dataset_lpips(dataset,models,use_gpu = True):
     loss_fn = lpips.LPIPS(net='alex',version=0.1)
@@ -162,29 +133,3 @@ if __name__ == "__main__":
 
     dataset = load_from_disk(args.dataset)
     compare_dataset(dataset,models,not args.no_gpu)
-
-
-# dataset = load_from_disk("coco_200_masks")
-# models = {"basic ddpm", "improved repaint with and blur average on noise sampling",
-#           "improved repaint with average over noise sampling", "improved repaint with blur", "improved repaint"}
-# scores = {}
-# count = 0
-
-# # for i, example in tqdm(enumerate(dataset)):
-# for i in tqdm(range(40,41)):
-#     example = dataset[i]
-#     og_image = example["image"]
-    
-#     for model in models:
-#         count += 1
-#         img_to_compare = f"./result_db/{i}/{model}.png"
-#         if model not in scores:
-#             scores[model] = 0.0
-#         scores[model] += lpips_2imgs(og_image,img_to_compare,use_gpu=False)
-
-# for model in models:
-#     scores[model] /= count
-
-# for model in models:
-#     print(model,scores[model].item())
-
