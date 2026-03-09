@@ -7,7 +7,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description="Run the model on a dataset.")
 parser.add_argument("--start", type=int, default=0, help="Starting index for the dataset.")
-parser.add_argument("--count", type=int, default=1, help="Number of images to process.")
+parser.add_argument("--count", type=int, default=200, help="Number of images to process.")
 args = parser.parse_args()
 
 repaint = repaint.RePaint()
