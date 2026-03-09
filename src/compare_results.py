@@ -10,20 +10,18 @@ from transformers import CLIPProcessor, CLIPModel
 from tqdm import tqdm
 from torchmetrics.image.fid import FrechetInceptionDistance
 import torchvision.transforms as transforms
-
 from torchmetrics.image.kid import KernelInceptionDistance
 
-def compare_dataset_kid(dataset, models, device="cuda" if torch.cuda.is_available() else "cpu"):
+def compare_dataset_kid(dataset, models, device):
     kid_scores = {}
     
     preprocess = transforms.Compose([
-        transforms.Resize((299, 299)),
+        transforms.Resize((512, 512)),
         transforms.ToTensor(),
         transforms.Lambda(lambda x: (x * 255).byte())
     ])
 
     for model_name in models:
-        # subset_size קובע כמה תמונות נדגמות בכל פעם לחישוב ה-Kernel
         kid = KernelInceptionDistance(subset_size=50).to(device)
         
         for i, example in enumerate(dataset):
@@ -36,52 +34,12 @@ def compare_dataset_kid(dataset, models, device="cuda" if torch.cuda.is_availabl
             kid.update(real_img, real=True)
             kid.update(gen_img_t, real=False)
 
-        # KID מחזיר ממוצע וסטיית תקן, אנחנו ניקח את הממוצע (mean)
         mean_kid, std_kid = kid.compute()
         kid_scores[model_name] = mean_kid
         
     return kid_scores
 
-def compare_dataset_fid(dataset, models, device="cuda" if torch.cuda.is_available() else "cpu"):
-    fid_scores = {}
-    
-    # טרנספורמציה בסיסית: FID דורש גודל מסוים (לרוב 299x299) וערכים של uint8
-    preprocess = transforms.Compose([
-        transforms.Resize((299, 299)),
-        transforms.ToTensor(),
-        transforms.Lambda(lambda x: (x * 255).byte())
-    ])
-
-    for model_name in models:
-        # אתחול המטריקה עבור כל מודל
-        fid = FrechetInceptionDistance(feature=2048).to(device)
-        
-        real_imgs = []
-        gen_imgs = []
-
-        for i, example in enumerate(dataset):
-            # תמונה אמיתית מהדאטהסט
-            real_img = example["image"].convert("RGB")
-            # תמונה שנוצרה
-            gen_img_path = f"./result_db/{i}/{model_name}.png"
-            gen_img = Image.open(gen_img_path).convert("RGB")
-
-            real_imgs.append(preprocess(real_img))
-            gen_imgs.append(preprocess(gen_img))
-
-        # המרה ל-Tensors ב-Batch אחד (אפשר לחלק ל-batches קטנים אם הזיכרון מוגבל)
-        real_imgs = torch.stack(real_imgs).to(device)
-        gen_imgs = torch.stack(gen_imgs).to(device)
-
-        # עדכון המטריקה
-        fid.update(real_imgs, real=True)
-        fid.update(gen_imgs, real=False)
-
-        fid_scores[model_name] = fid.compute()
-        
-    return fid_scores
-
-def compare_dataset_clip(dataset, models, device="cuda" if torch.cuda.is_available() else "cpu"):
+def compare_dataset_clip(dataset, models, device):
     scores = {}
     count = 0
     
@@ -91,18 +49,17 @@ def compare_dataset_clip(dataset, models, device="cuda" if torch.cuda.is_availab
     
     for i, example in tqdm(enumerate(dataset)):
         prompt = example["description"] 
-
         count += 1
+
         for model_name in models:
-            img_path = f"./result_db/{i}/{model_name}.png"
-            
-            img_to_compare = Image.open(img_path).convert("RGB")
+            img_to_compare = Image.open(f"./result_db/{i}/{model_name}.png").convert("RGB")
 
             inputs = processor(text=[prompt], images=img_to_compare, return_tensors="pt", padding=True).to(device)
 
             with torch.no_grad():
                 outputs = model(**inputs)
                 clip_score = outputs.logits_per_image
+                
             if model_name not in scores:
                 scores[model_name] = 0.0
             scores[model_name] += clip_score
@@ -162,36 +119,43 @@ def compare_dataset_lpips(dataset,models,use_gpu = True):
 
 def compare_dataset(dataset,models,use_gpu):
     fid_scores = compare_dataset_kid(dataset, models)
-
-    print("FID results (lower is better):")
-    for model in models:
-        print(f"{model}: {fid_scores[model].item():.4f}")
     clip_scores = compare_dataset_clip(dataset,models)
     lpips_scores = compare_dataset_lpips(dataset,models,use_gpu)
     ssim_scores = compare_dataset_ssim(dataset,models)
 
-    print("lpips results:")
+    print("FID results (lower is better):")
+    for model in models:
+        print(f"{model}: {fid_scores[model].item():.4f}")
+
+    print()
+
+    print("lpips results (lower is better):")
     for model in models:
         print(model,lpips_scores[model].item())
 
     print()
 
-    print("ssim results:")
+    print("ssim results (lower is better):")
     for model in models:
         print(model,ssim_scores[model].item())
 
-    print("clip results:")
+    print()
+
+    print("clip results (higher is better):")
     for model in models:
         print(model,clip_scores[model].item())
 
 
 models = {"basic ddpm", "improved repaint with and blur average on noise sampling",
           "improved repaint with average over noise sampling", "improved repaint with blur", "improved repaint"}
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the model on a dataset.")
     parser.add_argument("--dataset", type=str, default="coco_200_masks", help="Name of dataset")
     parser.add_argument("--no-gpu",action='store_true', help="Use gpu")
     args = parser.parse_args()
+
+    device="cuda" if torch.cuda.is_available() else "cpu"
 
     if(args.no_gpu):
         print("not using gpu")
