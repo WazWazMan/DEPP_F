@@ -1,6 +1,7 @@
 import lpips
 import cv2
 import numpy as np
+import torch
 
 def lpips_2imgs(image:str,path1:str, use_gpu = True,version = 0.1,loss_fn = None):
     if not loss_fn:
@@ -23,7 +24,8 @@ def lpips_2imgs(image:str,path1:str, use_gpu = True,version = 0.1,loss_fn = None
         img1 = img1.cuda()
 
     # Compute distance
-    dist01 = loss_fn.forward(img0, img1)
+    with torch.no_grad():
+        dist01 = loss_fn.forward(img0, img1)
     return dist01
     print('Distance: %.3f'%dist01)
 	

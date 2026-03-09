@@ -76,6 +76,9 @@ if __name__ == "__main__":
     parser.add_argument("--no-gpu",action='store_true', help="Use gpu")
     args = parser.parse_args()
 
+    if(args.no_gpu):
+        print("not using gpu")
+
     dataset = load_from_disk(args.dataset)
     compare_dataset(dataset,models,not args.no_gpu)
 
