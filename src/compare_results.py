@@ -118,8 +118,9 @@ def compare_dataset_lpips(dataset,models,use_gpu = True):
         print(model,scores[model])
 
 def compare_dataset(dataset,models,use_gpu):
-    fid_scores = compare_dataset_kid(dataset, models)
-    clip_scores = compare_dataset_clip(dataset,models)
+    device="cuda" if torch.cuda.is_available() else "cpu"
+    fid_scores = compare_dataset_kid(dataset, models,device)
+    clip_scores = compare_dataset_clip(dataset,models,device)
     lpips_scores = compare_dataset_lpips(dataset,models,use_gpu)
     ssim_scores = compare_dataset_ssim(dataset,models)
 
@@ -155,7 +156,6 @@ if __name__ == "__main__":
     parser.add_argument("--no-gpu",action='store_true', help="Use gpu")
     args = parser.parse_args()
 
-    device="cuda" if torch.cuda.is_available() else "cpu"
 
     if(args.no_gpu):
         print("not using gpu")
