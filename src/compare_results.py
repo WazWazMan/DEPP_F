@@ -4,6 +4,40 @@ from datasets import load_from_disk
 from tqdm import tqdm
 import argparse
 import lpips
+import torch
+from PIL import Image
+from transformers import CLIPProcessor, CLIPModel
+from tqdm import tqdm
+
+def compare_dataset_clip(dataset, models, device="cuda" if torch.cuda.is_available() else "cpu"):
+    scores = {}
+    count = 0
+    
+    model_id = "openai/clip-vit-base-patch32"
+    processor = CLIPProcessor.from_pretrained(model_id)
+    model = CLIPModel.from_pretrained(model_id).to(device)
+    
+    for i, example in tqdm(enumerate(dataset)):
+        prompt = example["prompt"] 
+
+        count += 1
+        for model_name in models:
+            img_path = f"./result_db/{i}/{model_name}.png"
+            
+            img_to_compare = Image.open(img_path).convert("RGB")
+
+            inputs = processor(text=[prompt], images=img_to_compare, return_tensors="pt", padding=True).to(device)
+
+            with torch.no_grad():
+                outputs = model(**inputs)
+                clip_score = outputs.logits_per_image.item() 
+
+            scores[model_name] += clip_score
+
+    for model_name in models:
+        scores[model_name] /= count
+
+    return scores
 
 def compare_dataset_ssim(dataset,models):
     scores = {}
@@ -14,8 +48,8 @@ def compare_dataset_ssim(dataset,models):
         # example = dataset[i]
         og_image = example["image"]
 
+        count += 1
         for model in models:
-            count += 1
             img_to_compare = f"./result_db/{i}/{model}.png"
             if model not in scores:
                 scores[model] = 0.0
@@ -39,8 +73,8 @@ def compare_dataset_lpips(dataset,models,use_gpu = True):
         # example = dataset[i]
         og_image = example["image"]
 
+        count += 1
         for model in models:
-            count += 1
             img_to_compare = f"./result_db/{i}/{model}.png"
             if model not in scores:
                 scores[model] = 0.0
@@ -56,6 +90,7 @@ def compare_dataset_lpips(dataset,models,use_gpu = True):
 def compare_dataset(dataset,models,use_gpu):
     lpips_scores = compare_dataset_lpips(dataset,models,use_gpu)
     ssim_scores = compare_dataset_ssim(dataset,models)
+    clip_scores = compare_dataset_clip()
 
     print("lpips results:")
     for model in models:
@@ -66,6 +101,10 @@ def compare_dataset(dataset,models,use_gpu):
     print("ssim results:")
     for model in models:
         print(model,ssim_scores[model].item())
+
+    print("clip results:")
+    for model in models:
+        print(model,clip_scores[model].item())
 
 
 models = {"basic ddpm", "improved repaint with and blur average on noise sampling",
