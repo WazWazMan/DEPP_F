@@ -88,9 +88,9 @@ def compare_dataset_lpips(dataset,models,use_gpu = True):
         print(model,scores[model])
 
 def compare_dataset(dataset,models,use_gpu):
+    clip_scores = compare_dataset_clip(dataset,models)
     lpips_scores = compare_dataset_lpips(dataset,models,use_gpu)
     ssim_scores = compare_dataset_ssim(dataset,models)
-    clip_scores = compare_dataset_clip()
 
     print("lpips results:")
     for model in models:
