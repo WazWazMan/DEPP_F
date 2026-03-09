@@ -11,6 +11,37 @@ from tqdm import tqdm
 from torchmetrics.image.fid import FrechetInceptionDistance
 import torchvision.transforms as transforms
 
+from torchmetrics.image.kid import KernelInceptionDistance
+
+def compare_dataset_kid(dataset, models, device="cuda" if torch.cuda.is_available() else "cpu"):
+    kid_scores = {}
+    
+    preprocess = transforms.Compose([
+        transforms.Resize((299, 299)),
+        transforms.ToTensor(),
+        transforms.Lambda(lambda x: (x * 255).byte())
+    ])
+
+    for model_name in models:
+        # subset_size קובע כמה תמונות נדגמות בכל פעם לחישוב ה-Kernel
+        kid = KernelInceptionDistance(subset_size=50).to(device)
+        
+        for i, example in enumerate(dataset):
+            real_img = preprocess(example["image"].convert("RGB")).unsqueeze(0).to(device)
+            
+            gen_img_path = f"./result_db/{i}/{model_name}.png"
+            gen_img = Image.open(gen_img_path).convert("RGB")
+            gen_img_t = preprocess(gen_img).unsqueeze(0).to(device)
+
+            kid.update(real_img, real=True)
+            kid.update(gen_img_t, real=False)
+
+        # KID מחזיר ממוצע וסטיית תקן, אנחנו ניקח את הממוצע (mean)
+        mean_kid, std_kid = kid.compute()
+        kid_scores[model_name] = mean_kid
+        
+    return kid_scores
+
 def compare_dataset_fid(dataset, models, device="cuda" if torch.cuda.is_available() else "cpu"):
     fid_scores = {}
     
@@ -130,7 +161,7 @@ def compare_dataset_lpips(dataset,models,use_gpu = True):
         print(model,scores[model])
 
 def compare_dataset(dataset,models,use_gpu):
-    fid_scores = compare_dataset_fid(dataset, models)
+    fid_scores = compare_dataset_kid(dataset, models)
 
     print("FID results (lower is better):")
     for model in models:
