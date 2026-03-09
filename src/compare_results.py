@@ -8,6 +8,47 @@ import torch
 from PIL import Image
 from transformers import CLIPProcessor, CLIPModel
 from tqdm import tqdm
+from torchmetrics.image.fid import FrechetInceptionDistance
+import torchvision.transforms as transforms
+
+def compare_dataset_fid(dataset, models, device="cuda" if torch.cuda.is_available() else "cpu"):
+    fid_scores = {}
+    
+    # טרנספורמציה בסיסית: FID דורש גודל מסוים (לרוב 299x299) וערכים של uint8
+    preprocess = transforms.Compose([
+        transforms.Resize((299, 299)),
+        transforms.ToTensor(),
+        transforms.Lambda(lambda x: (x * 255).byte())
+    ])
+
+    for model_name in models:
+        # אתחול המטריקה עבור כל מודל
+        fid = FrechetInceptionDistance(feature=2048).to(device)
+        
+        real_imgs = []
+        gen_imgs = []
+
+        for i, example in enumerate(dataset):
+            # תמונה אמיתית מהדאטהסט
+            real_img = example["image"].convert("RGB")
+            # תמונה שנוצרה
+            gen_img_path = f"./result_db/{i}/{model_name}.png"
+            gen_img = Image.open(gen_img_path).convert("RGB")
+
+            real_imgs.append(preprocess(real_img))
+            gen_imgs.append(preprocess(gen_img))
+
+        # המרה ל-Tensors ב-Batch אחד (אפשר לחלק ל-batches קטנים אם הזיכרון מוגבל)
+        real_imgs = torch.stack(real_imgs).to(device)
+        gen_imgs = torch.stack(gen_imgs).to(device)
+
+        # עדכון המטריקה
+        fid.update(real_imgs, real=True)
+        fid.update(gen_imgs, real=False)
+
+        fid_scores[model_name] = fid.compute()
+        
+    return fid_scores
 
 def compare_dataset_clip(dataset, models, device="cuda" if torch.cuda.is_available() else "cpu"):
     scores = {}
@@ -89,6 +130,11 @@ def compare_dataset_lpips(dataset,models,use_gpu = True):
         print(model,scores[model])
 
 def compare_dataset(dataset,models,use_gpu):
+    fid_scores = compare_dataset_fid(dataset, models)
+
+    print("FID results (lower is better):")
+    for model in models:
+        print(f"{model}: {fid_scores[model].item():.4f}")
     clip_scores = compare_dataset_clip(dataset,models)
     lpips_scores = compare_dataset_lpips(dataset,models,use_gpu)
     ssim_scores = compare_dataset_ssim(dataset,models)
