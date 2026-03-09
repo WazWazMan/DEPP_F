@@ -27,7 +27,7 @@ for i in range(start_index, end_index):
     result = repaint.run_all(
         img=current_image,
         mask=current_mask,
-        prompt=current_prompt,
+        prompt=current_prompt+ ", seamless integration, smooth transition, blending perfectly, high quality",
         j=10,
         r=10,
         seed=42
