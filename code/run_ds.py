@@ -1,6 +1,6 @@
 from datasets import load_from_disk
 from PIL import Image
-from utils import utils
+import utils
 from repaint import repaint
 from pathlib import Path
 import argparse
