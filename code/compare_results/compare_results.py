@@ -11,7 +11,7 @@ from tqdm import tqdm
 from torchmetrics.image.fid import FrechetInceptionDistance
 import torchvision.transforms as transforms
 from torchmetrics.image.kid import KernelInceptionDistance
-from .kid import compare_dataset_kid
+from kid import compare_dataset_kid
 
 def compare_dataset_clip(dataset, models, device):
     scores = {}
