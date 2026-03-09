@@ -1,3 +1,8 @@
+import torchvision.transforms as transforms
+from PIL import Image
+from torchmetrics.image.kid import KernelInceptionDistance
+
+
 def compare_dataset_kid(dataset, models, device):
     kid_scores = {}
     
