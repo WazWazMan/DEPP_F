@@ -17,8 +17,8 @@ def ssim(image1, image2, K, window_size, L):
     gauss = torch.Tensor([exp(-(x - window_size//2)**2/float(2*sigma**2)) for x in range(window_size)])
     _1D_window = (gauss/gauss.sum()).unsqueeze(1)
     _2D_window = _1D_window.mm(_1D_window.t()).float().unsqueeze(0).unsqueeze(0)
-    window = Variable(_2D_window.expand(channel, 1, window_size, window_size).contiguous())
-            
+    window = Variable(_2D_window.expand(channel, 1, window_size, window_size).contiguous()).to(image1.device)
+
     # define constants
     # * L = 255 for constants doesn't produce meaningful results; thus L = 1
     # C1 = (K[0]*L)**2;
@@ -42,7 +42,7 @@ def ssim(image1, image2, K, window_size, L):
     return ssim_map.mean()
 
 
-def ssim_2imgs(image, image2_path):
+def ssim_2imgs(image, image2_path, use_gpu = True):
     I1 = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
     I2 = cv2.imread(image2_path)
 
@@ -50,10 +50,14 @@ def ssim_2imgs(image, image2_path):
     # print(I1.shape, I2.shape) # returns (256,256,3)
     
     # tensors
-    I1 = torch.from_numpy(np.rollaxis(I1, 2)).float().unsqueeze(0)/255.0
+    I1: torch.Tensor = torch.from_numpy(np.rollaxis(I1, 2)).float().unsqueeze(0)/255.0
     I2 = torch.from_numpy(np.rollaxis(I2, 2)).float().unsqueeze(0)/255.0
     # print(I1.size(), I2.size()) # returns torch([1,3,256,256])
     
+    if(use_gpu):
+        I1 = I1.cuda()
+        I2 = I2.cuda()
+
     # tensor.autograd.Variable (Automatic differentiation variable)
     I1 = Variable(I1, requires_grad = True)
     I2 = Variable(I2, requires_grad = True)
