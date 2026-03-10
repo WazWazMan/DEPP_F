@@ -29,7 +29,6 @@ dependencies:
   - accelerate 
   - safetensors
   - lpips
-  - pycocotools
 
   - pip:
       - nbmerge
@@ -38,6 +37,7 @@ dependencies:
       - opencv-python
       - pyyaml
       - requests
+      - pycocotools
 
 platforms:
   - linux-64
