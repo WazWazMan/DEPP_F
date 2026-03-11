@@ -1,6 +1,7 @@
 code\compare_results\lpips_2imgs.py
 code\compare_results\ssim.py
 code\compare_results\kid.py
+code\compare_results\clip.py
 
 code\create_dataset.py
 
