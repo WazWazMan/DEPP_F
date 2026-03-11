@@ -17,7 +17,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Create dataset")
     parser.add_argument("--start", type=int, default=0, help="Start index of first sample")
     parser.add_argument("--count", type=int, default=200, help="count of samples to use")
-    parser.add_argument("--name", type=str, default="coco_200_masks2", help="name of dataset")
+    parser.add_argument("--name", type=str, default="coco_200_masks", help="name of dataset")
     args = parser.parse_args()
 
 
