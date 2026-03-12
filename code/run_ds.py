@@ -18,7 +18,7 @@ end_index = start_index + args.count
 
 for i in range(start_index, end_index):
 # for i, example in enumerate(dataset):
-    print(f"Running example {i + 1}/200...")
+    print(f"Running example {i + 1}/{len(dataset)}...")
     
     example = dataset[i]
     current_image = example["image"]
