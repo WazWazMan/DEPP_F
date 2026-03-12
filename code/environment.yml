@@ -29,6 +29,7 @@ dependencies:
   - accelerate 
   - safetensors
   - lpips
+  - torchmetrics
 
   - pip:
       - nbmerge
