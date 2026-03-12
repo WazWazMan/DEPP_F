@@ -30,6 +30,7 @@ dependencies:
   - safetensors
   - lpips
   - torchmetrics
+  - torch-fidelity
 
   - pip:
       - nbmerge
