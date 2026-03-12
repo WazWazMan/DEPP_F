@@ -29,6 +29,7 @@ dependencies:
   - accelerate 
   - safetensors
   - lpips
+  - torchmetrics
 
   - pip:
       - nbmerge
@@ -38,7 +39,6 @@ dependencies:
       - pyyaml
       - requests
       - pycocotools
-      - torchmetrics
 
 platforms:
   - linux-64
